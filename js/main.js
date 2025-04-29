@@ -4,20 +4,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const burger = document.querySelector('.burger');
     const nav = document.querySelector('.nav-links');
     const navLinks = document.querySelectorAll('.nav-links li');
+    const body = document.querySelector('body');
+
+    // Add animation delay indices to nav links
+    navLinks.forEach((link, index) => {
+        link.style.setProperty('--i', index);
+    });
 
     // Toggle Navigation
     burger.addEventListener('click', () => {
         // Toggle Nav
         nav.classList.toggle('nav-active');
         
-        // Animate Links
-        navLinks.forEach((link, index) => {
-            if (link.style.animation) {
-                link.style.animation = '';
-            } else {
-                link.style.animation = `navLinkFade 0.5s ease forwards ${index / 7 + 0.3}s`;
-            }
-        });
+        // Toggle body scroll lock
+        body.classList.toggle('menu-open');
         
         // Burger Animation
         burger.classList.toggle('toggle');
@@ -29,13 +29,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (nav.classList.contains('nav-active')) {
                 nav.classList.remove('nav-active');
                 burger.classList.remove('toggle');
-                
-                // Reset link animations
-                navLinks.forEach(link => {
-                    link.style.animation = '';
-                });
+                body.classList.remove('menu-open');
             }
         });
+    });
+
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (nav.classList.contains('nav-active') && 
+            !nav.contains(e.target) && 
+            !burger.contains(e.target)) {
+            nav.classList.remove('nav-active');
+            burger.classList.remove('toggle');
+            body.classList.remove('menu-open');
+        }
     });
 
     // Smooth scrolling for navigation links
@@ -70,12 +77,37 @@ document.addEventListener('DOMContentLoaded', () => {
             const subject = document.getElementById('subject').value;
             const message = document.getElementById('message').value;
             
-            // Here you would typically send the form data to a server
-            // For now, we'll just show an alert
-            alert(`Thanks for your message, ${name}! I'll get back to you soon.`);
+            // Show loading state
+            const submitBtn = document.querySelector('.submit-btn');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            submitBtn.disabled = true;
             
-            // Reset form
-            contactForm.reset();
+            // Send email using EmailJS
+            emailjs.send('service_usw3bdu', 'template_hupusol', {
+                from_name: name,
+                from_email: email,
+                subject: subject,
+                message: message,
+            })
+            .then(function() {
+                // Show success message
+                alert(`Thanks for your message, ${name}! I'll get back to you soon.`);
+                
+                // Reset form and button
+                contactForm.reset();
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            })
+            .catch(function(error) {
+                // Show error message
+                console.error('Error sending email:', error);
+                alert('Sorry, there was a problem sending your message. Please try again or contact me directly.');
+                
+                // Reset button
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            });
         });
     }
 
@@ -115,6 +147,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         lastScrollTop = scrollTop;
     });
+
+    // Fix for iOS 100vh issue
+    const fixHeight = () => {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    
+    // Call on initial load and resize
+    window.addEventListener('resize', fixHeight);
+    fixHeight();
 });
 
 // Add CSS animation for nav link fade
